@@ -7,6 +7,8 @@ const h=path=>createHash('sha256').update(readFileSync(path)).digest('hex');
 test('ASIC inputs are byte-exact pinned compiler-generated RTL',()=>{
   const p=JSON.parse(readFileSync('generated/provenance.json','utf8'));
   assert.equal(h('generated/add8.ores'),p.sourceSha256);
+  assert.equal(p.sourceCommit,'2be4899ec3ad2e8dd38d6514d06e38d3d81a6b13');
+  assert.equal(p.rtlGitBlobSha,'93f75db8bf1725a7fe0f1150f1c949f8919863ce');
   assert.equal(h('generated/add8.generated.sv'),p.rtlSha256);
   assert.equal(p.rtlSha256,'7888f715405fb1207ee4988d9b9cf9cd03ecc9eeca58b85782654d46104e01cd');
   assert.equal(p.siliconQualified,false);
