@@ -1,0 +1,23 @@
+name: ASIC platform generic netlist smoke
+on:
+  pull_request:
+  push:
+    branches: [main, 'feat/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  generic-netlist-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install RTL tools (required)
+        run: sudo apt-get update && sudo apt-get install -y iverilog yosys
+      - name: Verify actual synthesized generic netlist
+        run: bash scripts/generic_smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: asic-generic-netlist-only
+          path: build/
