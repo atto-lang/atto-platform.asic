@@ -1,0 +1,18 @@
+name: ASIC admission (no physical signoff claim)
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/evidence.test.mjs
+      - run: bash tests/wrapper-smoke.sh
