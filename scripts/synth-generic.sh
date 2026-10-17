@@ -4,7 +4,7 @@ set -euo pipefail
 if [[ $# -ne 3 ]]; then echo 'Usage: synth-generic.sh INPUT.sv TOP OUTPUT.v' >&2; exit 2; fi
 rtl=$1; top=$2; out=$3
 for p in "$rtl" "$out"; do
-  if [[ ! "$p" =~ ^[A-Za-z0-9_./-]+$ ]] || [[ "$p" == *..* ]]; then echo 'Unsafe path' >&2; exit 2; fi
+  if [[ ! "$p" =~ ^[A-Za-z0-9_./][A-Za-z0-9_./-]*$ ]] || [[ "$p" == *..* ]]; then echo 'Unsafe path' >&2; exit 2; fi
 done
 if [[ ! "$top" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then echo 'Unsafe top' >&2; exit 2; fi
 [[ -f "$rtl" ]] || { echo 'Missing RTL' >&2; exit 2; }
