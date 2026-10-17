@@ -19,11 +19,17 @@ jobs:
       - name: Reject unsafe wrapper paths
         run: bash tests/wrapper-smoke.sh
       - name: Install synthesis tool
-        run: sudo apt-get update && sudo apt-get install -y yosys
+        run: sudo apt-get update && sudo apt-get install -y yosys iverilog
       - name: Synthesize pinned compiler RTL to generic gates (NOT ASIC mapping)
         run: |
           mkdir -p outputs
           bash scripts/synth-generic.sh generated/add8.generated.sv ores_add8 outputs/add8.generic.v
+      - name: Exhaustively simulate synthesized technology-neutral gates
+        run: |
+          set -o pipefail
+          iverilog -g2012 -s tb -o /tmp/generic-netlist.tb outputs/add8.generic.v tests/generic-netlist-tb.sv
+          vvp /tmp/generic-netlist.tb | tee /tmp/asic-gate-sim.log
+          grep -Fx ASIC_GENERIC_65536_PASS /tmp/asic-gate-sim.log
       - uses: actions/upload-artifact@v4
         with:
           name: generic-gate-netlist-not-asic-qualified
