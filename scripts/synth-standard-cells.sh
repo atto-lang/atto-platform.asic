@@ -3,7 +3,7 @@ set -euo pipefail
 # Requires authorized technology Liberty; emits mapped netlist only, no physical signoff.
 if [[ $# -ne 3 ]]; then echo 'Usage: synth-standard-cells.sh INPUT.sv TOP OUTPUT.v (LIBERTY env required)' >&2; exit 2; fi
 rtl=$1; top=$2; out=$3
-: "\${LIBERTY:=}"
+LIBERTY=$(printenv LIBERTY || true)
 for p in "$rtl" "$out" "$LIBERTY"; do
  if [[ ! "$p" =~ ^[A-Za-z0-9_./][A-Za-z0-9_./-]*$ ]] || [[ "$p" == *..* ]]; then echo 'Unsafe path' >&2; exit 2; fi
 done
