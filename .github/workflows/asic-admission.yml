@@ -1,4 +1,4 @@
-name: ASIC admission (no physical signoff claim)
+name: ASIC Pre-PDK Strict Admission
 on:
   push:
     branches: [main, 'feat/**']
@@ -6,13 +6,28 @@ on:
 permissions:
   contents: read
 jobs:
-  guards:
+  structural-proof:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/evidence.test.mjs
-      - run: bash tests/wrapper-smoke.sh
+      - name: Verify provenance and no fake signoff claims
+        run: node --test tests/provenance.test.mjs
+      - name: Reject unsafe wrapper paths
+        run: bash tests/wrapper-smoke.sh
+      - name: Install synthesis tool
+        run: sudo apt-get update && sudo apt-get install -y yosys
+      - name: Synthesize pinned compiler RTL to generic gates (NOT ASIC mapping)
+        run: |
+          mkdir -p outputs
+          bash scripts/synth-generic.sh generated/add8.generated.sv ores_add8 outputs/add8.generic.v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generic-gate-netlist-not-asic-qualified
+          path: |
+            generated/provenance.json
+            outputs/add8.generic.v
+          retention-days: 14
