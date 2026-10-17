@@ -7,5 +7,7 @@
   "rtlSha256": "7888f715405fb1207ee4988d9b9cf9cd03ecc9eeca58b85782654d46104e01cd",
   "status": "pre-pdk-generic-logic-only",
   "siliconQualified": false,
-  "tapeoutReady": false
+  "tapeoutReady": false,
+  "sourceCommit": "2be4899ec3ad2e8dd38d6514d06e38d3d81a6b13",
+  "rtlGitBlobSha": "93f75db8bf1725a7fe0f1150f1c949f8919863ce"
 }
