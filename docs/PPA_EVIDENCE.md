@@ -8,6 +8,13 @@ python3 tools/validate_ppa_evidence.py examples/generic-synth.example.json
 python3 -m unittest discover -s tests -p 'test_*.py'
 ```
 
+The report reader accepts only 64 KiB or smaller regular files with a
+no-follow final path component; FIFO/device inputs, duplicate JSON members,
+nonstandard NaN/Infinity, invalid UTF-8 and excessive JSON nesting fail
+closed. It reads through one descriptor instead of separately checking then
+opening the filename. Parent-directory paths are not a filesystem sandbox.
+**Shape admission is not artifact authentication or a physical proof.**
+
 This validator admits only three *reporting* stages:
 - `GENERIC_SYNTH`: tool-independent netlist only; no cell area, corner, Fmax or power.
 - `CELL_MAPPED`: explicit target standard-cell Liberty SHA, corner, mapped
