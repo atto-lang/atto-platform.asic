@@ -37,7 +37,7 @@ def validate(info):
     require(type(info["schema_version"]) is int and info["schema_version"] == 1,
             "unknown schema")
     stage = info["stage"]
-    require(stage in {"GENERIC_SYNTH", "CELL_MAPPED", "PLACED_ROUTED"},
+    require(type(stage) is str and stage in {"GENERIC_SYNTH", "CELL_MAPPED", "PLACED_ROUTED"},
             "unknown ASIC evidence stage")
     for name in ("rtl_sha256", "netlist_sha256", "constraints_sha256", "synth_log_sha256"):
         require(digest(info[name], True), f"{name} requires exact SHA-256")
