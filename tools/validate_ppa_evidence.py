@@ -29,7 +29,7 @@ def digest(text, mandatory=False):
 
 
 def finite(value):
-    return type(value) in (int, float) and math.isfinite(value)
+    return type(value) in (int, float) and -sys.float_info.max <= value <= sys.float_info.max and math.isfinite(value)
 
 
 def validate(info):

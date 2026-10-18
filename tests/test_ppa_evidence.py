@@ -46,5 +46,9 @@ class PPATests(unittest.TestCase):
   self.rejects(**{**routed,"physical_log_sha256":""})
 
 
+ def test_oversized_integer_rejects_cleanly(self):
+  self.rejects(cell_area_um2=10**1000)
+  self.rejects(timing_slack_ns=-(10**1000))
+
 if __name__=="__main__":
  unittest.main()
