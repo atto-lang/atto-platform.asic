@@ -81,6 +81,17 @@ def validate(info):
             "silicon_measured": False}
 
 
+
+def unique_json_fields(pairs):
+    """Reject ambiguous duplicate JSON keys, including in nested evidence objects."""
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise Rejected(f"duplicate JSON field: {key}")
+        obj[key] = value
+    return obj
+
+
 def main(argv):
     if len(argv) != 2:
         print("usage: validate_ppa_evidence.py report.json", file=sys.stderr)
@@ -89,7 +100,7 @@ def main(argv):
         path = Path(argv[1])
         if path.stat().st_size > 65536:
             raise Rejected("manifest too large")
-        print(json.dumps(validate(json.loads(path.read_text(encoding="utf8"))),
+        print(json.dumps(validate(json.loads(path.read_text(encoding="utf8"), object_pairs_hook=unique_json_fields)),
                          sort_keys=True))
         return 0
     except (OSError, ValueError, UnicodeError) as exc:
