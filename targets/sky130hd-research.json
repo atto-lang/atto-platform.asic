@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "sky130hd-research",
+  "pdk": "sky130",
+  "cellLibrary": "sky130_fd_sc_hd",
+  "licenseAndToolchainPinRequired": true,
+  "stdCellLiberty": null,
+  "techLef": null,
+  "stdCellLef": null,
+  "corner": null,
+  "clockPeriodNs": null,
+  "timingSignoff": false,
+  "drcPassed": false,
+  "lvsPassed": false,
+  "tapeoutReady": false,
+  "status": "not-qualified"
+}
