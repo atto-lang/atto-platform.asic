@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "stage": "GENERIC_SYNTH",
+  "rtl_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "netlist_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "library_sha256": "",
+  "corner": "",
+  "toolchain": "EXAMPLE ONLY; no synthesis actually executed",
+  "constraints_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "synth_log_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "physical_log_sha256": "",
+  "equivalence_log_sha256": "",
+  "cell_area_um2": null,
+  "timing_slack_ns": null,
+  "estimated_power_mw": null,
+  "switching_activity_sha256": "",
+  "power_model_sha256": ""
+}

@@ -18,3 +18,23 @@ LIBERTY=path/to/authorized.lib bash scripts/synth-standard-cells.sh generated/ad
 A `signoff` evidence manifest must contain STA/DRC/LVS/GDS and constraints hashes; the manifest checker validates structure, **not authenticity or passing results**. Never infer tapeout-readiness from this step.
 
 **Physical-design finish line:** pin legal PDK version/corners, LEF/Liberty and OpenROAD toolchain; reproducible RTL-to-GDS; independent timing/DRC/LVS review; approval by the foundry/process owner. For real manufacturing, obtain DFM/waiver and process-specific review. Cross-repo source and RTL digest: `26d446e1d903edca9691d37fc55c946033b590687468449103507c61b7026e80`, `7888f715405fb1207ee4988d9b9cf9cd03ecc9eeca58b85782654d46104e01cd`.
+
+## Existing generic smoke gate
+
+
+This platform repo consumes RTL; it does **not** implement the Oreslang
+language compiler or assert that an ASIC is fabricated.
+See [common-source hardware contract PR #65](https://github.com/ores-truffle-oreslang/oreslang-common-source/pull/65).
+
+The checked-in illustrative \`add8\` fixture is synthesizable with Yosys.
+\`bash scripts/generic_smoke.sh\` requires Yosys, Icarus and vvp and emits
+a **technology-independent generic gate netlist**, simulating all 65,536
+input combinations **against the synthesized netlist**. Missing tools fail.
+Workflow artifacts retain simulation logs, synthesis logs and digests.
+This is only an H0/H1-adjacent gate: the fixture is not attested as coming
+from the current compiler revision without cross-repo provenance.
+
+No Liberty cell library, PDK, SDC, mapped cells, OpenROAD implementation,
+hold/setup closure, DRC/LVS, signoff or GDSII is demonstrated.
+\`scripts/physical_gate.sh\` fails closed until the complete reviewed PDK flow
+exists. Never conflate generic logic synthesis with a real ASIC tapeout.
