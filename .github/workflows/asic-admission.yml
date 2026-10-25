@@ -10,12 +10,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact source checkout and clean tree
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse --verify HEAD)" = "$EXPECTED_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Verify provenance and no fake signoff claims
-        run: node --test tests/provenance.test.mjs
+        run: node --test tests/provenance.test.mjs tests/evidence.test.mjs
       - name: Reject unsafe wrapper paths
         run: bash tests/wrapper-smoke.sh
       - name: Install synthesis tool
