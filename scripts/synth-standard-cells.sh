@@ -25,6 +25,8 @@ if [[ ! -f "$rtl" || -L "$rtl" || ! -f "$LIBERTY" ]]; then echo 'Missing source 
 rtl_real="$(realpath -- "$rtl")"
 [[ "$rtl_real" == "$repo_root/"* ]] || { echo 'RTL escaped repository root' >&2; exit 2; }
 LIBERTY="$(realpath -- "$LIBERTY")"
+[[ "$LIBERTY" =~ ^/[A-Za-z0-9._/-]+$ ]] ||
+  { echo 'Unsafe resolved LIBERTY path' >&2; exit 2; }
 out_parent="$(dirname -- "$out")"
 test -d "$out_parent" || { echo 'Missing output directory' >&2; exit 2; }
 out_parent_real="$(cd "$out_parent" && pwd -P)"
