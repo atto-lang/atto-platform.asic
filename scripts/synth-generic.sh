@@ -4,6 +4,7 @@ set -euo pipefail
 if [[ $# -ne 3 ]]; then echo 'Usage: synth-generic.sh INPUT.sv TOP OUTPUT.v' >&2; exit 2; fi
 rtl=$1; top=$2; out=$3
 repo_root="$(pwd -P)"
+[[ "$repo_root" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo 'Unsafe repository root' >&2; exit 2; }
 command -v realpath >/dev/null || { echo 'MISSING_TOOL: realpath' >&2; exit 3; }
 validate_relative_path() {
   local path="$1" part cursor=""
@@ -26,8 +27,10 @@ test -d "$out_parent" || { echo 'Missing output directory' >&2; exit 2; }
 out_parent_real="$(cd "$out_parent" && pwd -P)"
 [[ "$out_parent_real" == "$repo_root" || "$out_parent_real" == "$repo_root/"* ]] ||
   { echo 'Output escaped repository root' >&2; exit 2; }
-[[ ! -e "$out" && ! -L "$out" ]] || { echo 'Refusing overwrite' >&2; exit 2; }
+out_real="$out_parent_real/$(basename -- "$out")"
+[[ "$out_real" =~ ^/[A-Za-z0-9._/-]+$ ]] || { echo 'Unsafe resolved output path' >&2; exit 2; }
+[[ ! -e "$out_real" && ! -L "$out_real" ]] || { echo 'Refusing overwrite' >&2; exit 2; }
 command -v yosys >/dev/null || { echo 'MISSING_TOOL: yosys' >&2; exit 3; }
-yosys -Q -T -p "read_verilog -sv $rtl; hierarchy -check -top $top; synth -top $top; check -assert; write_verilog -noattr $out; stat"
-[[ -s "$out" ]] || { echo 'Empty generic netlist' >&2; exit 1; }
+yosys -Q -T -p "read_verilog -sv $rtl_real; hierarchy -check -top $top; synth -top $top; check -assert; write_verilog -noattr $out_real; stat"
+[[ -s "$out_real" ]] || { echo 'Empty generic netlist' >&2; exit 1; }
 echo 'ASIC_GENERIC_SYNTH_PASS_NOT_MAPPED'
