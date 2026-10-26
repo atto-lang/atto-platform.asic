@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   structural-proof:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -22,7 +22,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse --verify HEAD)" = "$EXPECTED_SHA"
           test -z "$(git status --porcelain --untracked-files=all)"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - name: Verify provenance and no fake signoff claims
@@ -41,7 +41,7 @@ jobs:
           iverilog -g2012 -s tb -o /tmp/generic-netlist.tb outputs/add8.generic.v tests/generic-netlist-tb.sv
           vvp /tmp/generic-netlist.tb | tee /tmp/asic-gate-sim.log
           grep -Fx ASIC_GENERIC_65536_PASS /tmp/asic-gate-sim.log
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: generic-gate-netlist-not-asic-qualified
           path: |
