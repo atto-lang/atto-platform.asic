@@ -46,6 +46,31 @@ export function checkEvidence(obj) {
   return true;
 }
 
+
+// The accepted manifest schema is flat. JSON.parse alone silently takes the
+// final value for duplicate member names, allowing contradictory claims.
+// Scan quoted tokens after syntax validation and reject duplicate key names,
+// including names that differ only by JSON escapes (e.g. "\u0074apeoutReady").
+export function parseEvidenceJson(content) {
+  const parsed = JSON.parse(content);
+  const keys = new Set();
+  for (let i = 0; i < content.length; ++i) {
+    if (content[i] !== '"') continue;
+    const start = i++;
+    for (; i < content.length; ++i) {
+      if (content[i] === '\\') { ++i; continue; }
+      if (content[i] === '"') break;
+    }
+    let next = i + 1;
+    while (next < content.length && /\s/.test(content[next])) ++next;
+    if (content[next] !== ':') continue;
+    const key = JSON.parse(content.slice(start, i + 1));
+    if (keys.has(key)) throw Error('duplicate JSON member: ' + key);
+    keys.add(key);
+  }
+  return parsed;
+}
+
 export function readEvidence(path) {
   if (typeof path !== 'string' || path.length === 0) throw Error('manifest path required');
   // Linux CI runs this parser. Do not silently weaken no-follow admission.
@@ -66,7 +91,7 @@ export function readEvidence(path) {
       used += got;
     }
     if (used === 0 || used > MAX_MANIFEST_BYTES) throw Error('manifest exceeds 64 KiB');
-    return JSON.parse(bytes.toString('utf8', 0, used));
+    return parseEvidenceJson(bytes.toString('utf8', 0, used));
   } finally {
     closeSync(fd);
   }
