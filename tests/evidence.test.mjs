@@ -40,6 +40,23 @@ test('rejects unknown fields, signoff-only fields at lower stages and bad labels
   assert.throws(() => checkEvidence({...base,technology:'a'.repeat(257)}),/technology/);
   assert.throws(() => checkEvidence({...base,stage:'tapeout'}),/schema/);
 });
+
+test('rejects duplicate JSON members including escaped aliases and nested members', () => {
+  const root=mkdtempSync(join(tmpdir(),'asic-dupe-'));
+  try {
+    const file=join(root,'manifest.json');
+    const raw=JSON.stringify(base);
+    writeFileSync(file,raw.replace('"tapeoutReady":false',
+      '"tapeoutReady":true,"tapeoutReady":false'));
+    assert.throws(()=>readEvidence(file),/duplicate JSON member/);
+    writeFileSync(file,raw.replace('"tapeoutReady":false',
+      '"\\u0074apeoutReady":true,"tapeoutReady":false'));
+    assert.throws(()=>readEvidence(file),/duplicate JSON member/);
+    writeFileSync(file,'{"extra":{"nested":1,"nested":2}}');
+    assert.throws(()=>readEvidence(file),/duplicate JSON member/);
+  } finally { rmSync(root,{recursive:true,force:true}); }
+});
+
 test('descriptor-bound CLI input rejects symlink, directory and oversize', () => {
   const root=mkdtempSync(join(tmpdir(),'asic-manifest-'));
   try {
