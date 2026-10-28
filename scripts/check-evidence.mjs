@@ -23,7 +23,7 @@ export function checkEvidence(obj) {
   const allowed = new Set([...BASE_KEYS, ...(obj.stage === 'signoff' ? SIGNOFF_KEYS : [])]);
   if (Object.keys(obj).some(key => !allowed.has(key)) ||
       [...allowed].some(key => !Object.hasOwn(obj, key))) {
-    throw Error('missing/unknown manifest field');
+    throw Error(obj.stage === 'signoff' ? 'signoff requires exact report fields' : 'missing/unknown manifest field');
   }
   for (const key of ['sourceSha256', 'rtlSha256']) {
     if (typeof obj[key] !== 'string' || !SHA256.test(obj[key])) {
