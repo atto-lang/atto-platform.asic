@@ -74,3 +74,29 @@ test('descriptor-bound CLI input rejects symlink, directory and oversize', () =>
     assert.throws(()=>readEvidence(huge),/bounded regular file/);
   } finally { rmSync(root,{recursive:true,force:true}); }
 });
+
+test('invalid UTF-8 in a provenance field fails rather than normalizing to replacement characters', () => {
+  const root=mkdtempSync(join(tmpdir(),'asic-utf8-'));
+  try {
+    const manifest=join(root,'evidence.json');
+    for (const sequence of [[0xc3,0x28], [0xc0,0xaf], [0xed,0xa0]]) {
+      const raw=Buffer.from(JSON.stringify(base),'utf8');
+      const at=raw.indexOf(Buffer.from('yosys'));
+      assert.ok(at>=0);
+      raw[at]=sequence[0]; raw[at+1]=sequence[1];
+      writeFileSync(manifest,raw);
+      assert.throws(()=>readEvidence(manifest), /encoded|UTF-8|valid|encoding/i);
+    }
+  } finally {rmSync(root,{recursive:true,force:true});}
+});
+
+test('admitted UTF-8 provenance labels remain exact, without lossy normalization', () => {
+  const root=mkdtempSync(join(tmpdir(),'asic-utf8-valid-'));
+  try {
+    const manifest=join(root,'evidence.json');
+    const record={...base,technology:'FinFET \\u03bc-test',toolchain:'Synthesis \\u03bb-v1'};
+    writeFileSync(manifest,JSON.stringify(record));
+    assert.deepEqual(readEvidence(manifest),record);
+    assert.equal(checkEvidence(readEvidence(manifest)),true);
+  } finally {rmSync(root,{recursive:true,force:true});}
+});
