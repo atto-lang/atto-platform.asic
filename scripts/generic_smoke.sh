@@ -9,8 +9,10 @@ test -s build/add8_generic.v
 iverilog -g2012 -s add8_tb -o build/netlist-sim build/add8_generic.v fixtures/add8_tb.sv
 vvp build/netlist-sim | tee build/netlist-sim.log
 grep -q 'PASS: ASIC platform fixture 65536 simulation vectors' build/netlist-sim.log
-bash scripts/equivalence_gate.sh fixtures/add8.v build/add8_generic.v
-cp build/equivalence.log build/equivalence-positive.log
+bash scripts/equivalence_gate.sh fixtures/add8.v build/add8_generic.v | tee build/equivalence-positive.log
+test -s build/equivalence-positive.log
+grep -Fq 'Equivalence successfully proven!' build/equivalence-positive.log
+grep -Fq 'PASS: Yosys 8-bit combinational functional equivalence' build/equivalence-positive.log
 bash scripts/test_equivalence_gate.sh
 sha256sum fixtures/add8.v build/add8_generic.v > build/sha256.txt
 echo 'PASS: generic gate netlist only. NOT Liberty mapped; NOT placed/routed; NOT silicon.'
