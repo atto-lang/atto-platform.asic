@@ -1,6 +1,7 @@
 // Schema admission only. Even a fully populated manifest is NOT authenticated
 // physical-design evidence or an ASIC tapeout/signoff approval.
 import {openSync, closeSync, fstatSync, readSync, constants} from 'node:fs';
+import {TextDecoder} from 'node:util';
 
 const SHA256 = /^[0-9a-f]{64}$/;
 const BASE_KEYS = new Set(['schemaVersion', 'stage', 'sourceSha256', 'rtlSha256',
@@ -91,7 +92,10 @@ export function readEvidence(path) {
       used += got;
     }
     if (used === 0 || used > MAX_MANIFEST_BYTES) throw Error('manifest exceeds 64 KiB');
-    return parseEvidenceJson(bytes.toString('utf8', 0, used));
+    // Replacement-decoding malformed UTF-8 could silently normalize an
+    // untrusted provenance label into an apparently valid manifest.
+    const utf8 = new TextDecoder('utf-8', {fatal: true});
+    return parseEvidenceJson(utf8.decode(bytes.subarray(0, used)));
   } finally {
     closeSync(fd);
   }
