@@ -100,3 +100,78 @@ test('admitted UTF-8 provenance labels remain exact, without lossy normalization
     assert.equal(checkEvidence(readEvidence(manifest)),true);
   } finally {rmSync(root,{recursive:true,force:true});}
 });
+
+
+// additional fail-closed manifest schema regressions (source-only, not hardware).
+test('rejects non-integer and wrong-version manifest schema identities',()=>{
+  for(const schemaVersion of [0,2,-1,'1',1.0+Number.EPSILON,null,undefined,true,{},[]]){
+    assert.throws(()=>checkEvidence({...base,schemaVersion}),/schema\/stage/);
+  }
+});
+
+test('rejects inherited metadata, arrays, null and missing own required fields',()=>{
+  for(const input of [null,[],{},Object.create(base),Object.assign(Object.create(null),{...base,toolchain:undefined})]){
+    assert.throws(()=>checkEvidence(input));
+  }
+  for(const key of Object.keys(base)){
+    const copy={...base};delete copy[key];
+    assert.throws(()=>checkEvidence(copy),`missing key: ${key}`);
+  }
+});
+
+test('rejects noncanonical signoff hashes independently for each report field',()=>{
+  const all={...base,stage:'signoff',...reports};
+  for(const key of ['staReportSha256','drcReportSha256','lvsReportSha256','gdsSha256','constraintsSha256']){
+    for(const bad of ['0'.repeat(63),'0'.repeat(65),'F'.repeat(64),'0'.repeat(63)+'g',0,false,null,{}]){
+      assert.throws(()=>checkEvidence({...all,[key]:bad}),/signoff requires exact SHA-256/,key);
+    }
+  }
+});
+
+test('rejects signoff-only evidence fields at every earlier physical stage',()=>{
+  for(const stage of ['synthesis-only','place-route']){
+    for(const key of Object.keys(reports)){
+      assert.throws(()=>checkEvidence({...base,stage,[key]:reports[key]}),/field/,stage+':'+key);
+    }
+  }
+});
+
+test('rejects controls and oversized provenance strings at exact label boundary',()=>{
+  for(const field of ['toolchain','technology']){
+    for(const bad of ['', '  ','x'.repeat(257),'test\nline','test\rline','test\tline','x\u0000y','x\u007fy',7,[],{}]){
+      assert.throws(()=>checkEvidence({...base,[field]:bad}),/invalid/,field);
+    }
+    assert.equal(checkEvidence({...base,[field]:'x'.repeat(256)}),true);
+    assert.equal(checkEvidence({...base,[field]:'λ-ref-2026'}),true);
+  }
+});
+
+test('rejects escaped duplicate JSON member aliases across all required top-level keys',()=>{
+  for(const key of Object.keys(base)){
+    const raw=JSON.stringify(base);
+    const escaped='\\u'+key.codePointAt(0).toString(16).padStart(4,'0')+key.slice(1);
+    const scalar=JSON.stringify(base[key]);
+    const needle=JSON.stringify(key)+':'+scalar;
+    assert.ok(raw.includes(needle));
+    const modified=raw.replace(needle,JSON.stringify(key)+':'+scalar+',"'+escaped+'":'+scalar);
+    const root=mkdtempSync(join(tmpdir(),'asic-alias-'));
+    try{
+      const file=join(root,'aliases.json');writeFileSync(file,modified);
+      assert.throws(()=>readEvidence(file),/duplicate JSON member/,key);
+    }finally{rmSync(root,{recursive:true,force:true});}
+  }
+});
+
+test('enforces manifest file size at the 64 KiB boundary without truncation',()=>{
+  const root=mkdtempSync(join(tmpdir(),'asic-bound-'));
+  try{
+    const file=join(root,'manifest.json');
+    const raw=JSON.stringify(base);
+    writeFileSync(file,raw+' '.repeat(65536-Buffer.byteLength(raw)));
+    assert.deepEqual(readEvidence(file),base);
+    writeFileSync(file,raw+' '.repeat(65537-Buffer.byteLength(raw)));
+    assert.throws(()=>readEvidence(file),/bounded regular file|exceeds 64 KiB/);
+    writeFileSync(file,Buffer.alloc(0));
+    assert.throws(()=>readEvidence(file),/bounded regular file/);
+  }finally{rmSync(root,{recursive:true,force:true});}
+});
