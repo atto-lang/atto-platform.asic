@@ -1,0 +1,30 @@
+// TestSuite reference-model assertions only; not native asic API execution.
+import class TestCase, TestSuite, TestOptions, TestOutcome, RunSummary from "ores.std/testing";
+import fnc expect_true, run_suite, require_success from "ores.std/testing";
+
+fnc carry8(int a, int b): bool { return a + b >= 256; }
+
+fnc carry_on_max_plus_one(): TestOutcome {
+  return expect_true(carry8(255,1), "carry_on_max_plus_one scalar reference failed");
+}
+fnc no_carry_zero(): TestOutcome {
+  return expect_true(!carry8(0,0), "no_carry_zero scalar reference failed");
+}
+fnc no_carry_below_boundary(): TestOutcome {
+  return expect_true(!carry8(200,55), "no_carry_below_boundary scalar reference failed");
+}
+fnc carry_at_exact_boundary(): TestOutcome {
+  return expect_true(carry8(128,128), "carry_at_exact_boundary scalar reference failed");
+}
+pub routine main(): void {
+  val TestSuite suite = new TestSuite("platform-asic-extended", arr[
+    new TestCase("carry_on_max_plus_one", carry_on_max_plus_one, false, ""),
+    new TestCase("no_carry_zero", no_carry_zero, false, ""),
+    new TestCase("no_carry_below_boundary", no_carry_below_boundary, false, ""),
+    new TestCase("carry_at_exact_boundary", carry_at_exact_boundary, false, "")
+  ]);
+  val TestOptions options = new TestOptions("", false, true);
+  val RunSummary summary = run_suite(rt borrow suite, rt borrow options);
+  require_success(rt borrow summary);
+  return;
+}
