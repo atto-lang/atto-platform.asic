@@ -126,6 +126,17 @@ def read_report(path):
             remaining -= len(block)
         if remaining == 0:
             raise Rejected("report exceeds 64 KiB")
+        # A bounded read is not sufficient if the same input inode changes
+        # between open/stat and EOF. Match the FPGA report reader's
+        # regular-file lifecycle fence before parsing any evidence.
+        after = os.fstat(fd)
+        if (after.st_dev != metadata.st_dev or
+                after.st_ino != metadata.st_ino or
+                after.st_size != metadata.st_size or
+                after.st_mtime_ns != metadata.st_mtime_ns or
+                after.st_ctime_ns != metadata.st_ctime_ns or
+                sum(map(len, chunks)) != metadata.st_size):
+            raise Rejected("report changed during bounded read")
     finally:
         os.close(fd)
     return json.loads(b"".join(chunks).decode("utf-8"),
