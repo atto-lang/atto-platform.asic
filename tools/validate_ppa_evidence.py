@@ -46,10 +46,14 @@ def validate(info):
     for name in ("library_sha256", "physical_log_sha256", "equivalence_log_sha256",
                  "switching_activity_sha256", "power_model_sha256"):
         require(digest(info[name]), f"bad {name}")
-    require(isinstance(info["toolchain"], str) and 0 < len(info["toolchain"]) <= 256,
-            "versioned toolchain required")
-    require(isinstance(info["corner"], str) and len(info["corner"]) <= 128,
-            "corner must be a bounded string")
+    toolchain = info["toolchain"]
+    require(type(toolchain) is str and 0 < len(toolchain) <= 256 and
+            bool(toolchain.strip()) and toolchain.isprintable(),
+            "versioned printable toolchain required")
+    corner = info["corner"]
+    require(type(corner) is str and len(corner) <= 128 and
+            (corner == "" or (bool(corner.strip()) and corner.isprintable())),
+            "corner must be a bounded printable label")
     area, slack, power = (info["cell_area_um2"], info["timing_slack_ns"],
                           info["estimated_power_mw"])
     require(area is None or (finite(area) and area >= 0), "invalid area")
