@@ -80,10 +80,13 @@ export function readEvidence(path) {
   }
   const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
-    const st = fstatSync(fd);
-    if (!st.isFile() || st.size < 1 || st.size > MAX_MANIFEST_BYTES) {
+    const st = fstatSync(fd, {bigint: true});
+    if (!st.isFile() || st.size < 1n || st.size > BigInt(MAX_MANIFEST_BYTES)) {
       throw Error('manifest must be a bounded regular file');
     }
+    // An alias outside the trusted working directory must not permit
+    // concurrent modification of a file accepted as immutable evidence.
+    if (st.nlink !== 1n) throw Error('manifest must be single-linked');
     const bytes = Buffer.allocUnsafe(MAX_MANIFEST_BYTES + 1);
     let used = 0;
     while (used < bytes.length) {
@@ -92,6 +95,13 @@ export function readEvidence(path) {
       used += got;
     }
     if (used === 0 || used > MAX_MANIFEST_BYTES) throw Error('manifest exceeds 64 KiB');
+    const after = fstatSync(fd, {bigint: true});
+    if (BigInt(used) !== st.size || after.dev !== st.dev ||
+        after.ino !== st.ino || after.nlink !== st.nlink ||
+        after.mode !== st.mode || after.size !== st.size ||
+        after.mtimeNs !== st.mtimeNs || after.ctimeNs !== st.ctimeNs) {
+      throw Error('manifest changed during bounded read');
+    }
     // Replacement-decoding malformed UTF-8 could silently normalize an
     // untrusted provenance label into an apparently valid manifest.
     const utf8 = new TextDecoder('utf-8', {fatal: true});

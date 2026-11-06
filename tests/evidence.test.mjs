@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, writeFileSync, symlinkSync, rmSync, mkdirSync} from 'node:fs';
+import {mkdtempSync, writeFileSync, symlinkSync, rmSync, mkdirSync, linkSync, unlinkSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {checkEvidence, readEvidence} from '../scripts/check-evidence.mjs';
@@ -73,6 +73,21 @@ test('descriptor-bound CLI input rejects symlink, directory and oversize', () =>
     writeFileSync(huge,'x'.repeat(65537));
     assert.throws(()=>readEvidence(huge),/bounded regular file/);
   } finally { rmSync(root,{recursive:true,force:true}); }
+});
+
+test('manifest admission rejects hard-link aliases, restores after unlink', () => {
+  const root=mkdtempSync(join(tmpdir(),'asic-manifest-hardlink-'));
+  try {
+    const manifest=join(root,'evidence.json');
+    const alias=join(root,'alias.json');
+    writeFileSync(manifest,JSON.stringify(base));
+    assert.deepEqual(readEvidence(manifest),base);
+    linkSync(manifest,alias);
+    assert.throws(()=>readEvidence(manifest),/single-linked/);
+    assert.throws(()=>readEvidence(alias),/single-linked/);
+    unlinkSync(alias);
+    assert.deepEqual(readEvidence(manifest),base);
+  } finally {rmSync(root,{recursive:true,force:true});}
 });
 
 test('invalid UTF-8 in a provenance field fails rather than normalizing to replacement characters', () => {
