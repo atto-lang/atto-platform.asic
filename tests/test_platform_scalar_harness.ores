@@ -1,0 +1,32 @@
+// Pure Oreslang scalar reference models; these do not call platform native APIs.
+import class TestCase, TestSuite, TestOptions, TestOutcome, RunSummary from "ores.std/testing";
+import fnc expect_true, run_suite, require_success from "ores.std/testing";
+
+fnc add8_reference(int left, int right): int {
+  let int sum = left + right;
+  if sum >= 256; do
+    return sum - 256;
+  fi
+  return sum;
+}
+
+fnc add8_no_carry(): TestOutcome {
+  return expect_true(add8_reference(19, 23) == 42, "add8_no_carry reference assertion failed");
+}
+fnc add8_carry_wrap(): TestOutcome {
+  return expect_true(add8_reference(255, 1) == 0 && add8_reference(250, 10) == 4, "add8_carry_wrap reference assertion failed");
+}
+fnc add8_top_boundary(): TestOutcome {
+  return expect_true(add8_reference(255, 0) == 255 && add8_reference(0, 255) == 255, "add8_top_boundary reference assertion failed");
+}
+pub routine main(): void {
+  val TestSuite suite = new TestSuite("asic-scalar-reference", arr[
+    new TestCase("add8_no_carry", add8_no_carry, false, ""),
+    new TestCase("add8_carry_wrap", add8_carry_wrap, false, ""),
+    new TestCase("add8_top_boundary", add8_top_boundary, false, "")
+  ]);
+  val TestOptions options = new TestOptions("", false, true);
+  val RunSummary summary = run_suite(rt borrow suite, rt borrow options);
+  require_success(rt borrow summary);
+  return;
+}
