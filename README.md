@@ -38,3 +38,14 @@ No Liberty cell library, PDK, SDC, mapped cells, OpenROAD implementation,
 hold/setup closure, DRC/LVS, signoff or GDSII is demonstrated.
 \`scripts/physical_gate.sh\` fails closed until the complete reviewed PDK flow
 exists. Never conflate generic logic synthesis with a real ASIC tapeout.
+
+## Repository ownership and migration (2026-11-08)
+
+**Current home:** `ores-truffle-oreslang/oreslang-platform.asic`, in the Oreslang legacy organization. The public language name is **AttoLang**. Existing repo/CLI/package identifiers and supported `.ores` sources remain compatibility contracts pending separately tested migration.
+
+- **Belongs here:** ASIC target profiles and hardware codegen/verification research.
+- **Out of scope:** shipping hardware or treating RTL-only checks as full guest parity.
+- **Organizational split:** [atto-lang](https://github.com/atto-lang) governs the language/compiler/runtime/target/parity ecosystem; [atto-co](https://github.com/atto-co) governs separately owned production cloud infrastructure, tenant management, billing, identity and deployment. Related `atto-*` repositories created independently must not be mistaken for a Git transfer.
+- **Proposed initial transfer:** preserve this repository's GitHub numeric ID, original name/history and exact tree in a gated move to `atto-lang/oreslang-platform.asic`; no first-stage direct `atto-co` move is approved. Later product carve-outs require a new security and owner decision.
+
+**Maintainer procedure:** coordinate in [migration issue #26](https://github.com/ores-truffle-oreslang/.github/issues/26) and consult [migration runbook draft #25](https://github.com/ores-truffle-oreslang/.github/pull/25). Identify source and target administrators, independent security reviewer, exact source commit SHA/tree and numeric repo ID; review branch protections, target permissions, open PRs/issues, tags/releases, workflows/runners, secrets/environments, packages, webhooks/Apps, Pages, submodules and consumers. Never mirror private source as a transfer shortcut. Perform an authorized GitHub ownership transfer, verify unchanged ID/tree/history and restored security, then update dependencies and run exact-head CI with **nonzero executed job steps**. `steps=[]`/`null` is `NOT_EXECUTED`; source-only/host-only runs do not establish compiler-backed AttoLang execution or target certification.
