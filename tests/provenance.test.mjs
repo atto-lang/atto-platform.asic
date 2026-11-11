@@ -19,6 +19,7 @@ function parsePinnedProvenance(raw) {
   assert.equal(p.schemaVersion,1);
   assert.equal(p.sourceRepo,'ores-truffle-oreslang/oreslang-source.hdl');
   assert.equal(p.sourcePath,'tests/fixtures/add8.ores');
+  assert.equal(p.sourceSha256,'26d446e1d903edca9691d37fc55c946033b590687468449103507c61b7026e80');
   assert.equal(p.compilerFixturePath,'tests/fixtures/add8.generated.sv');
   assert.equal(p.status,'pre-pdk-generic-logic-only');
   assert.equal(p.siliconQualified,false);
