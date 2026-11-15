@@ -204,3 +204,17 @@ test('provenance labels reject invisible, bidirectional and surrogate controls',
       pdkRevision:'process' + marker + 'v1'}), /pdkRevision/);
   }
 });
+
+test('provenance labels require NFC and reject misleading Unicode whitespace', () => {
+  const bad = ['Cafe\\u0301', 'verified\\u00a0v1', 'verified\\u2009v1'];
+  for (const field of ['toolchain', 'technology']) {
+    for (const label of bad) {
+      assert.throws(() => checkEvidence({...base, [field]:label}), /invalid/, field);
+    }
+    assert.equal(checkEvidence({...base, [field]:'Café v1'}),true);
+  }
+  for (const label of bad) {
+    assert.throws(() => checkEvidence({...base,stage:'signoff',...reports,
+      pdkRevision:label}), /pdkRevision/);
+  }
+});
