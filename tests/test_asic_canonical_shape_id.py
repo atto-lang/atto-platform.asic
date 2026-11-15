@@ -53,6 +53,25 @@ class CanonicalShapeIdTest(unittest.TestCase):
         with self.assertRaises(module.Rejected):
             module.canonical_shape_sha256(changed)
 
+    def test_mapping_side_effects_cannot_hash_unvalidated_fields(self):
+        class FlipAfterRead(dict):
+            def __getitem__(self, key):
+                value = super().__getitem__(key)
+                if key == "toolchain":
+                    super().__setitem__("rtl_sha256", "not-a-sha")
+                return value
+
+        instance = FlipAfterRead(copy.deepcopy(BASE))
+        self.assertEqual(module.canonical_shape_sha256(instance),
+                         module.canonical_shape_sha256(BASE))
+        self.assertEqual(instance["rtl_sha256"], BASE["rtl_sha256"])
+
+    def test_non_json_values_rejected_as_shape_errors(self):
+        changed = copy.deepcopy(BASE)
+        changed["cell_area_um2"] = object()
+        with self.assertRaises(module.Rejected):
+            module.canonical_shape_sha256(changed)
+
     def test_cli_is_opt_in_and_backward_compatible(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "report.json"
