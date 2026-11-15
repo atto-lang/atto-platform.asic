@@ -38,3 +38,8 @@ No Liberty cell library, PDK, SDC, mapped cells, OpenROAD implementation,
 hold/setup closure, DRC/LVS, signoff or GDSII is demonstrated.
 \`scripts/physical_gate.sh\` fails closed until the complete reviewed PDK flow
 exists. Never conflate generic logic synthesis with a real ASIC tapeout.
+
+
+## Two-stage RTL composition host regression
+
+A Rust 2021 runner (`tools/add8_pipeline_gate.rs`) drives Icarus to simulate **two real `ores_add8` modules in sequence** for all 65,536 combinations of the first two input bytes, with a deterministic third byte. It checks both stages against independently computed 8-bit modular arithmetic and fails unless the simulator exits successfully and emits an exact marker. The Rust unit test checks the host oracle. CI installs Icarus and executes both tests. This is simulation of the pinned reference RTL, **not** fresh compiler generation, ASIC timing/signoff, FPGA board validation, or silicon measurement.
