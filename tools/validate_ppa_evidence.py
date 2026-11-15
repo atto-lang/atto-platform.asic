@@ -142,6 +142,8 @@ def read_report(path):
         if (after.st_dev != metadata.st_dev or
                 after.st_ino != metadata.st_ino or
                 after.st_size != metadata.st_size or
+                after.st_nlink != metadata.st_nlink or
+                after.st_mode != metadata.st_mode or
                 after.st_mtime_ns != metadata.st_mtime_ns or
                 after.st_ctime_ns != metadata.st_ctime_ns or
                 sum(map(len, chunks)) != metadata.st_size):
