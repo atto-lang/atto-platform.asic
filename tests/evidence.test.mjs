@@ -206,7 +206,9 @@ test('provenance labels reject invisible, bidirectional and surrogate controls',
 });
 
 test('provenance labels require NFC and reject misleading Unicode whitespace', () => {
-  const bad = ['Cafe\\u0301', 'verified\\u00a0v1', 'verified\\u2009v1'];
+  const bad = ['Cafe' + String.fromCodePoint(0x0301),
+    'verified' + String.fromCodePoint(0x00a0) + 'v1',
+    'verified' + String.fromCodePoint(0x2009) + 'v1'];
   for (const field of ['toolchain', 'technology']) {
     for (const label of bad) {
       assert.throws(() => checkEvidence({...base, [field]:label}), /invalid/, field);
