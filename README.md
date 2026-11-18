@@ -1,5 +1,13 @@
 # Oreslang ASIC platform — pre-PDK proof, not taped out
 
+## AttoLang naming migration (2026-11-18)
+
+**AttoLang** is the new public name for **Oreslang**. This `ores-truffle-oreslang/oreslang-platform.asic` repository is a legacy-named checkout. The corresponding AttoLang project for new work is [atto-lang/atto-platform.asic](https://github.com/atto-lang/atto-platform.asic). Do not assume that matching project names mean GitHub history, PRs, issues, code or feature completeness has been transferred. Hardware feature support requires real target proof; simulations and host-only tests are not ASIC execution.
+
+The authoritative language specification is **[atto-spec](https://github.com/atto-lang/atto-spec)** (not old Oreslang README/spec prose); portable test fixtures belong in [atto-platform-conformance](https://github.com/atto-lang/atto-platform-conformance), and portable libraries in [atto-common-source](https://github.com/atto-lang/atto-common-source). The evolving language contracts include canonical `.atto` source, `snake_case` callable names, `borrow!`/`take!`/`copy!`/`copy!!`/`share!`, [implicit borrowing](https://github.com/atto-lang/atto-spec/blob/main/language/implicit-argument-borrow-v1.md), [file/module `define const` with guarded one-time `os.read_env`](https://github.com/atto-lang/atto-spec/blob/main/language/file-module-const-v1.md), and [bitwise `<<<`/`>>>`/`ashr` versus stream `<<`/`>>`](https://github.com/atto-lang/atto-spec/blob/main/language/bitwise-and-stream-operators-v1.md). These are **target rules**, not automatic execution claims for this repo.
+
+Treat historical `.ores` fixtures, `oreslang-*` commands, package IDs, ABIs and examples below as compatibility instructions until verified changes supersede them. No Python project tooling/tests; prefer Rust support tooling. Compiler/runtime support and parity require exact source SHA/tree, target/toolchain, executed positive and negative guest tests; host-only or zero-step CI is **not executed** evidence.
+
 This repository owns technology mapping and eventual physical verification of **the same compiler-emitted SystemVerilog** used by `oreslang-platform.fpga`. Its `generated/add8.generated.sv` fixture is byte-for-byte pinned to `oreslang-source.hdl`'s source-derived golden artifact; `tests/provenance.test.mjs` checks SHA-256 and rejects forged completion claims.
 
 **Available now:** source/RTL provenance, generic technology-independent gate synthesis, safe parameter entrypoint, explicit Liberty-required `scripts/synth-standard-cells.sh` for research libraries. Tests are documented as gates only after CI completes.
