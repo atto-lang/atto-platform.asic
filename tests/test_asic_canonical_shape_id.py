@@ -1,0 +1,90 @@
+"""Shape ID is deterministic, field-sensitive and explicitly not provenance proof."""
+import copy
+import importlib.util
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+TOOL = ROOT / "tools" / "validate_ppa_evidence.py"
+spec = importlib.util.spec_from_file_location("shape_id_validator", TOOL)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+BASE = {
+    "schema_version": 1,
+    "stage": "GENERIC_SYNTH",
+    "rtl_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "netlist_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "library_sha256": "",
+    "corner": "",
+    "toolchain": "yosys-test",
+    "constraints_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "synth_log_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "physical_log_sha256": "",
+    "equivalence_log_sha256": "",
+    "cell_area_um2": None,
+    "timing_slack_ns": None,
+    "estimated_power_mw": None,
+    "switching_activity_sha256": "",
+    "power_model_sha256": ""
+}
+
+
+class CanonicalShapeIdTest(unittest.TestCase):
+    def test_id_is_stable_across_member_order(self):
+        original = copy.deepcopy(BASE)
+        reversed_members = dict(reversed(list(BASE.items())))
+        self.assertEqual(module.canonical_shape_sha256(original),
+                         module.canonical_shape_sha256(reversed_members))
+        self.assertEqual(len(module.canonical_shape_sha256(original)), 64)
+
+    def test_changed_shape_changes_id(self):
+        changed = copy.deepcopy(BASE)
+        changed["toolchain"] = "different-toolchain"
+        self.assertNotEqual(module.canonical_shape_sha256(BASE),
+                            module.canonical_shape_sha256(changed))
+
+    def test_rejects_invalid_before_hashing(self):
+        changed = copy.deepcopy(BASE)
+        changed["rtl_sha256"] = "not-a-sha"
+        with self.assertRaises(module.Rejected):
+            module.canonical_shape_sha256(changed)
+
+    def test_mapping_side_effects_cannot_hash_unvalidated_fields(self):
+        class FlipAfterRead(dict):
+            def __getitem__(self, key):
+                value = super().__getitem__(key)
+                if key == "toolchain":
+                    super().__setitem__("rtl_sha256", "not-a-sha")
+                return value
+
+        instance = FlipAfterRead(copy.deepcopy(BASE))
+        self.assertEqual(module.canonical_shape_sha256(instance),
+                         module.canonical_shape_sha256(BASE))
+        self.assertEqual(instance["rtl_sha256"], BASE["rtl_sha256"])
+
+    def test_non_json_values_rejected_as_shape_errors(self):
+        changed = copy.deepcopy(BASE)
+        changed["cell_area_um2"] = object()
+        with self.assertRaises(module.Rejected):
+            module.canonical_shape_sha256(changed)
+
+    def test_cli_is_opt_in_and_backward_compatible(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "report.json"
+            path.write_text(json.dumps(BASE), encoding="utf-8")
+            base = subprocess.run([sys.executable, str(TOOL), str(path)],
+                                  capture_output=True, text=True, check=True)
+            extended = subprocess.run([sys.executable, str(TOOL), "--with-shape-id", str(path)],
+                                      capture_output=True, text=True, check=True)
+            first, second = json.loads(base.stdout), json.loads(extended.stdout)
+            self.assertNotIn("shape_sha256", first)
+            self.assertEqual(second.pop("shape_sha256"), module.canonical_shape_sha256(BASE))
+            self.assertEqual(first, second)
+
+
+if __name__ == "__main__":
+    unittest.main()

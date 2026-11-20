@@ -1,0 +1,51 @@
+name: ASIC Pre-PDK Strict Admission
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  structural-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify exact source checkout and clean tree
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse --verify HEAD)" = "$EXPECTED_SHA"
+          python3 scripts/verify_raw_checkout.py
+          python3 -m unittest discover -s tests -p 'test_verify_raw_checkout.py' -q
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Verify provenance and no fake signoff claims
+        run: node --test tests/provenance.test.mjs tests/evidence.test.mjs
+      - name: Reject unsafe wrapper paths
+        run: bash tests/wrapper-smoke.sh
+      - name: Install synthesis tool
+        run: sudo apt-get update && sudo apt-get install -y yosys iverilog
+      - name: Synthesize pinned compiler RTL to generic gates (NOT ASIC mapping)
+        run: |
+          mkdir -p outputs
+          bash scripts/synth-generic.sh generated/add8.generated.sv ores_add8 outputs/add8.generic.v
+      - name: Exhaustively simulate synthesized technology-neutral gates
+        run: |
+          set -o pipefail
+          iverilog -g2012 -s tb -o /tmp/generic-netlist.tb outputs/add8.generic.v tests/generic-netlist-tb.sv
+          vvp /tmp/generic-netlist.tb | tee /tmp/asic-gate-sim.log
+          grep -Fx ASIC_GENERIC_65536_PASS /tmp/asic-gate-sim.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: generic-gate-netlist-not-asic-qualified
+          path: |
+            generated/provenance.json
+            outputs/add8.generic.v
+          retention-days: 14
