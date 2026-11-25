@@ -12,7 +12,9 @@ const MAX_MANIFEST_BYTES = 65536;
 
 function nonemptyBounded(value) {
   return typeof value === 'string' && value.trim().length > 0 &&
-    value.length <= 256 && !/[\x00-\x1f\x7f]/.test(value);
+    value.length <= 256 && value.normalize('NFC') === value &&
+    !/[^\S ]/u.test(value) &&
+    !/[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}]/u.test(value);
 }
 
 export function checkEvidence(obj) {

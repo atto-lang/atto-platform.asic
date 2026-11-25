@@ -1,45 +1,46 @@
-# Oreslang ASIC platform — pre-PDK proof, not taped out
+> **AI agent instructions (organization-wide):** Before working on code, issues, or pull requests, read and follow the [organization `AGENTS.md`](https://github.com/atto-lang/.github/blob/main/AGENTS.md), including its **merge-first stealth-development policy**. Honor any repository-local `AGENTS.md`, explicit holds, and GitHub-enforced rules.
 
-This repository owns technology mapping and eventual physical verification of **the same compiler-emitted SystemVerilog** used by `oreslang-platform.fpga`. Its `generated/add8.generated.sv` fixture is byte-for-byte pinned to `oreslang-source.hdl`'s source-derived golden artifact; `tests/provenance.test.mjs` checks SHA-256 and rejects forged completion claims.
+# atto-platform.asic
 
-**Available now:** source/RTL provenance, generic technology-independent gate synthesis, safe parameter entrypoint, explicit Liberty-required `scripts/synth-standard-cells.sh` for research libraries. Tests are documented as gates only after CI completes.
+ASIC-targeted compilation research and hardware integration for AttoLang.
 
-**NOT achieved:** authorized or installed PDK; technology-mapped design in a named process corner; timing/power reports; floorplan/place-route; DRC; LVS; GDS signoff; fabrication; tapeout.
+## Naming migration and language authority
 
-```sh
-node --test tests/provenance.test.mjs
-bash tests/wrapper-smoke.sh
-mkdir -p outputs
-bash scripts/synth-generic.sh generated/add8.generated.sv ores_add8 outputs/add8.generic.v
-# Mapping requires an authorized PDK Liberty file; not shipped:
-LIBERTY=path/to/authorized.lib bash scripts/synth-standard-cells.sh generated/add8.generated.sv ores_add8 outputs/add8.mapped.v
-```
+This repository is maintained at [atto-lang/atto-platform.asic](https://github.com/atto-lang/atto-platform.asic); use `https://github.com/atto-lang/atto-platform.asic.git` for Git remotes and canonical `.atto` source examples. The normative language contract is [atto-spec](https://github.com/atto-lang/atto-spec), with executable guest evidence tracked by [atto-platform-conformance](https://github.com/atto-lang/atto-platform-conformance). Follow current ownership, borrowing, effects, actor, and syntax rules there; do not infer implemented features from a README or unexecuted CI.
 
-A `signoff` evidence manifest must contain STA/DRC/LVS/GDS and constraints hashes; the manifest checker validates structure, **not authenticity or passing results**. Never infer tapeout-readiness from this step.
+## Scope
 
-**Physical-design finish line:** pin legal PDK version/corners, LEF/Liberty and OpenROAD toolchain; reproducible RTL-to-GDS; independent timing/DRC/LVS review; approval by the foundry/process owner. For real manufacturing, obtain DFM/waiver and process-specific review. Cross-repo source and RTL digest: `26d446e1d903edca9691d37fc55c946033b590687468449103507c61b7026e80`, `7888f715405fb1207ee4988d9b9cf9cd03ecc9eeca58b85782654d46104e01cd`.
+Hardware compilation research, bounded language subsets, and silicon-facing verification.
 
-## Existing generic smoke gate
+## Compatibility and design
 
+This package is intended to integrate with [AttoLang](https://github.com/atto-lang) while clearly separating portable language behavior from backend- and host-specific features. Document APIs, target restrictions, and security/trust boundaries.
 
-This platform repo consumes RTL; it does **not** implement the Oreslang
-language compiler or assert that an ASIC is fabricated.
-See [common-source hardware contract PR #65](https://github.com/ores-truffle-oreslang/oreslang-common-source/pull/65).
+## Development and verification
 
-The checked-in illustrative \`add8\` fixture is synthesizable with Yosys.
-\`bash scripts/generic_smoke.sh\` requires Yosys, Icarus and vvp and emits
-a **technology-independent generic gate netlist**, simulating all 65,536
-input combinations **against the synthesized netlist**. Missing tools fail.
-Workflow artifacts retain simulation logs, synthesis logs and digests.
-This is only an H0/H1-adjacent gate: the fixture is not attested as coming
-from the current compiler revision without cross-repo provenance.
+Refer to checked-in sources and CI workflows for verified build and test commands. Include platform-specific execution tests and publish exact-commit evidence before asserting backend parity or production readiness.
 
-No Liberty cell library, PDK, SDC, mapped cells, OpenROAD implementation,
-hold/setup closure, DRC/LVS, signoff or GDSII is demonstrated.
-\`scripts/physical_gate.sh\` fails closed until the complete reviewed PDK flow
-exists. Never conflate generic logic synthesis with a real ASIC tapeout.
+## Project status
 
+This README describes the intended repository scope and does not imply implemented functionality or verified target coverage.
+
+## Related
+
+- [Language specification](https://github.com/atto-lang/atto-spec)
+- [Platform conformance](https://github.com/atto-lang/atto-platform-conformance)
+
+## Repository ownership and contribution routing
+
+**Belongs here:** ASIC physical/design integration, silicon-target constraints, bounded actor/hardware designs and formal/RTL validation.
+
+**Belongs elsewhere:** Source-level hardware lowering belongs in atto-source.hdl; FPGA-specific implementation in atto-platform.fpga; spec in atto-spec.
+
+**Security and portability boundary:** Avoid presenting RTL simulation as fabricated silicon proof; document trusted toolchains, clock/reset timing, area/power budgets and fail-closed feature gates.
+
+AttoLang is the canonical project name; new source, examples and documentation use `.atto` and the `atto-lang` repository organization. This README defines scope, not feature readiness.
+
+**Acceptance:** name exact source SHA/tree, runtime/toolchain, positive and negative checks and execution receipt before claiming support. Host-only tests and empty CI steps do not prove guest execution.
 
 ## Two-stage RTL composition host regression
 
-A Rust 2021 runner (`tools/add8_pipeline_gate.rs`) drives Icarus to simulate **two real `ores_add8` modules in sequence** for all 65,536 combinations of the first two input bytes, with a deterministic third byte. It checks both stages against independently computed 8-bit modular arithmetic and fails unless the simulator exits successfully and emits an exact marker. The Rust unit test checks the host oracle. CI installs Icarus and executes both tests. This is simulation of the pinned reference RTL, **not** fresh compiler generation, ASIC timing/signoff, FPGA board validation, or silicon measurement.
+The Rust 2021 runner (`tools/add8_pipeline_gate.rs`) drives Icarus to simulate two real `ores_add8` modules in sequence for all 65,536 first-stage input pairs, using a deterministic third byte (not exhaustive over 24-bit triples). It checks both stages against independently computed 8-bit modular arithmetic. The gate requires successful simulation and an exact completion marker; the negative tests reject poisoned RTL and missing input. The historical module name is retained to preserve the pinned reference RTL. This is host simulation, not fresh AttoLang compiler generation, ASIC timing/signoff, FPGA board validation or silicon measurement.

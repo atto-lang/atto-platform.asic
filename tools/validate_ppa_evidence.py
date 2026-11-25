@@ -119,6 +119,10 @@ def read_report(path):
         metadata = os.fstat(fd)
         if not stat.S_ISREG(metadata.st_mode):
             raise Rejected("report must be a regular file")
+        # Multiple hardlinks let a second path mutate supposedly pinned
+        # evidence without touching the supplied pathname.
+        if metadata.st_nlink != 1:
+            raise Rejected("report must be single-linked")
         if not 0 <= metadata.st_size <= MAX_REPORT_BYTES:
             raise Rejected("report exceeds 64 KiB")
         chunks = []
@@ -138,6 +142,8 @@ def read_report(path):
         if (after.st_dev != metadata.st_dev or
                 after.st_ino != metadata.st_ino or
                 after.st_size != metadata.st_size or
+                after.st_nlink != metadata.st_nlink or
+                after.st_mode != metadata.st_mode or
                 after.st_mtime_ns != metadata.st_mtime_ns or
                 after.st_ctime_ns != metadata.st_ctime_ns or
                 sum(map(len, chunks)) != metadata.st_size):

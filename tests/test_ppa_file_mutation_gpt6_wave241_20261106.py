@@ -35,7 +35,8 @@ class BoundedPpaReportLifecycleTests(unittest.TestCase):
             return SimpleNamespace(
                 st_dev=value.st_dev, st_ino=value.st_ino,
                 st_size=value.st_size, st_mtime_ns=value.st_mtime_ns + 1,
-                st_ctime_ns=value.st_ctime_ns, st_mode=value.st_mode)
+                st_ctime_ns=value.st_ctime_ns, st_mode=value.st_mode,
+                st_nlink=value.st_nlink)
         with patch.object(gate.os, "fstat", side_effect=fstat_mutated):
             with self.assertRaisesRegex(gate.Rejected, "changed during bounded read"):
                 gate.read_report(self.path)
