@@ -190,3 +190,33 @@ test('enforces manifest file size at the 64 KiB boundary without truncation',()=
     assert.throws(()=>readEvidence(file),/bounded regular file/);
   }finally{rmSync(root,{recursive:true,force:true});}
 });
+
+test('provenance labels reject invisible, bidirectional and surrogate controls', () => {
+  const dangerous = ['\u202e', '\u2066', '\u200b', '\ufeff', '\u2028', '\ud800'];
+  for (const field of ['toolchain', 'technology']) {
+    for (const marker of dangerous) {
+      assert.throws(() => checkEvidence({...base, [field]:'verified' + marker + 'v1'}), /invalid/, field);
+    }
+    assert.equal(checkEvidence({...base, [field]:'λ-valid-2026'}), true);
+  }
+  for (const marker of dangerous) {
+    assert.throws(() => checkEvidence({...base, stage:'signoff', ...reports,
+      pdkRevision:'process' + marker + 'v1'}), /pdkRevision/);
+  }
+});
+
+test('provenance labels require NFC and reject misleading Unicode whitespace', () => {
+  const bad = ['Cafe' + String.fromCodePoint(0x0301),
+    'verified' + String.fromCodePoint(0x00a0) + 'v1',
+    'verified' + String.fromCodePoint(0x2009) + 'v1'];
+  for (const field of ['toolchain', 'technology']) {
+    for (const label of bad) {
+      assert.throws(() => checkEvidence({...base, [field]:label}), /invalid/, field);
+    }
+    assert.equal(checkEvidence({...base, [field]:'Café v1'}),true);
+  }
+  for (const label of bad) {
+    assert.throws(() => checkEvidence({...base,stage:'signoff',...reports,
+      pdkRevision:label}), /pdkRevision/);
+  }
+});
