@@ -24,6 +24,10 @@ Refer to checked-in sources and CI workflows for verified build and test command
 
 This README describes the intended repository scope and does not imply implemented functionality or verified target coverage.
 
+## Two-stage RTL composition host regression
+
+The Rust 2021 runner (`tools/add8_pipeline_gate.rs`) drives Icarus to simulate two real `ores_add8` modules in sequence for all 65,536 first-stage input pairs, using a deterministic third byte (not exhaustive over 24-bit triples). It checks both stages against independently computed 8-bit modular arithmetic. The gate requires successful simulation and an exact completion marker; the negative tests reject poisoned RTL and missing input. The historical module name is retained to preserve the pinned reference RTL. This is host simulation, not fresh AttoLang compiler generation, ASIC timing/signoff, FPGA board validation or silicon measurement.
+
 ## Related
 
 - [Language specification](https://github.com/atto-lang/atto-spec)
