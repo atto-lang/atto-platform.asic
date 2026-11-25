@@ -1,51 +1,52 @@
-# Oreslang ASIC platform — pre-PDK proof, not taped out
+> **AI agent instructions (organization-wide):** Before working on code, issues, or pull requests, read and follow the [organization `AGENTS.md`](https://github.com/atto-lang/.github/blob/main/AGENTS.md), including its **merge-first stealth-development policy**. Honor any repository-local `AGENTS.md`, explicit holds, and GitHub-enforced rules.
 
-This repository owns technology mapping and eventual physical verification of **the same compiler-emitted SystemVerilog** used by `oreslang-platform.fpga`. Its `generated/add8.generated.sv` fixture is byte-for-byte pinned to `oreslang-source.hdl`'s source-derived golden artifact; `tests/provenance.test.mjs` checks SHA-256 and rejects forged completion claims.
+# atto-platform.asic
 
-**Available now:** source/RTL provenance, generic technology-independent gate synthesis, safe parameter entrypoint, explicit Liberty-required `scripts/synth-standard-cells.sh` for research libraries. Tests are documented as gates only after CI completes.
+ASIC-targeted compilation research and hardware integration for AttoLang.
 
-**NOT achieved:** authorized or installed PDK; technology-mapped design in a named process corner; timing/power reports; floorplan/place-route; DRC; LVS; GDS signoff; fabrication; tapeout.
+## Naming migration and language authority
 
-```sh
-node --test tests/provenance.test.mjs
-bash tests/wrapper-smoke.sh
-mkdir -p outputs
-bash scripts/synth-generic.sh generated/add8.generated.sv ores_add8 outputs/add8.generic.v
-# Mapping requires an authorized PDK Liberty file; not shipped:
-LIBERTY=path/to/authorized.lib bash scripts/synth-standard-cells.sh generated/add8.generated.sv ores_add8 outputs/add8.mapped.v
-```
+This repository is maintained at [atto-lang/atto-platform.asic](https://github.com/atto-lang/atto-platform.asic); use `https://github.com/atto-lang/atto-platform.asic.git` for Git remotes and canonical `.atto` source examples. The normative language contract is [atto-spec](https://github.com/atto-lang/atto-spec), with executable guest evidence tracked by [atto-platform-conformance](https://github.com/atto-lang/atto-platform-conformance). Follow current ownership, borrowing, effects, actor, and syntax rules there; do not infer implemented features from a README or unexecuted CI.
 
-A `signoff` evidence manifest must contain STA/DRC/LVS/GDS and constraints hashes; the manifest checker validates structure, **not authenticity or passing results**. Never infer tapeout-readiness from this step.
+## Scope
 
-**Physical-design finish line:** pin legal PDK version/corners, LEF/Liberty and OpenROAD toolchain; reproducible RTL-to-GDS; independent timing/DRC/LVS review; approval by the foundry/process owner. For real manufacturing, obtain DFM/waiver and process-specific review. Cross-repo source and RTL digest: `26d446e1d903edca9691d37fc55c946033b590687468449103507c61b7026e80`, `7888f715405fb1207ee4988d9b9cf9cd03ecc9eeca58b85782654d46104e01cd`.
+Hardware compilation research, bounded language subsets, and silicon-facing verification.
 
-## Existing generic smoke gate
+## Compatibility and design
 
+This package is intended to integrate with [AttoLang](https://github.com/atto-lang) while clearly separating portable language behavior from backend- and host-specific features. Document APIs, target restrictions, and security/trust boundaries.
 
-This platform repo consumes RTL; it does **not** implement the Oreslang
-language compiler or assert that an ASIC is fabricated.
-See [common-source hardware contract PR #65](https://github.com/ores-truffle-oreslang/oreslang-common-source/pull/65).
+## Development and verification
 
-The checked-in illustrative \`add8\` fixture is synthesizable with Yosys.
-\`bash scripts/generic_smoke.sh\` requires Yosys, Icarus and vvp and emits
-a **technology-independent generic gate netlist**, simulating all 65,536
-input combinations **against the synthesized netlist**. Missing tools fail.
-Workflow artifacts retain simulation logs, synthesis logs and digests.
-This is only an H0/H1-adjacent gate: the fixture is not attested as coming
-from the current compiler revision without cross-repo provenance.
+Refer to checked-in sources and CI workflows for verified build and test commands. Include platform-specific execution tests and publish exact-commit evidence before asserting backend parity or production readiness.
 
-No Liberty cell library, PDK, SDC, mapped cells, OpenROAD implementation,
-hold/setup closure, DRC/LVS, signoff or GDSII is demonstrated.
-\`scripts/physical_gate.sh\` fails closed until the complete reviewed PDK flow
-exists. Never conflate generic logic synthesis with a real ASIC tapeout.
+## Project status
 
-## Repository ownership and migration (2026-11-08)
+This README describes the intended repository scope and does not imply implemented functionality or verified target coverage.
 
-**Current home:** `ores-truffle-oreslang/oreslang-platform.asic`, in the Oreslang legacy organization. The public language name is **AttoLang**. Existing repo/CLI/package identifiers and supported `.ores` sources remain compatibility contracts pending separately tested migration.
+## Related
 
-- **Belongs here:** ASIC target profiles and hardware codegen/verification research.
-- **Out of scope:** shipping hardware or treating RTL-only checks as full guest parity.
-- **Organizational split:** [atto-lang](https://github.com/atto-lang) governs the language/compiler/runtime/target/parity ecosystem; [atto-co](https://github.com/atto-co) governs separately owned production cloud infrastructure, tenant management, billing, identity and deployment. Related `atto-*` repositories created independently must not be mistaken for a Git transfer.
-- **Proposed initial transfer:** preserve this repository's GitHub numeric ID, original name/history and exact tree in a gated move to `atto-lang/oreslang-platform.asic`; no first-stage direct `atto-co` move is approved. Later product carve-outs require a new security and owner decision.
+- [Language specification](https://github.com/atto-lang/atto-spec)
+- [Platform conformance](https://github.com/atto-lang/atto-platform-conformance)
 
-**Maintainer procedure:** coordinate in [migration issue #26](https://github.com/ores-truffle-oreslang/.github/issues/26) and consult [migration runbook draft #25](https://github.com/ores-truffle-oreslang/.github/pull/25). Identify source and target administrators, independent security reviewer, exact source commit SHA/tree and numeric repo ID; review branch protections, target permissions, open PRs/issues, tags/releases, workflows/runners, secrets/environments, packages, webhooks/Apps, Pages, submodules and consumers. Never mirror private source as a transfer shortcut. Perform an authorized GitHub ownership transfer, verify unchanged ID/tree/history and restored security, then update dependencies and run exact-head CI with **nonzero executed job steps**. `steps=[]`/`null` is `NOT_EXECUTED`; source-only/host-only runs do not establish compiler-backed AttoLang execution or target certification.
+## Repository ownership and contribution routing
+
+**Belongs here:** ASIC physical/design integration, silicon-target constraints, bounded actor/hardware designs and formal/RTL validation.
+
+**Belongs elsewhere:** Source-level hardware lowering belongs in atto-source.hdl; FPGA-specific implementation in atto-platform.fpga; spec in atto-spec.
+
+**Security and portability boundary:** Avoid presenting RTL simulation as fabricated silicon proof; document trusted toolchains, clock/reset timing, area/power budgets and fail-closed feature gates.
+
+AttoLang is the canonical project name; new source, examples and documentation use `.atto` and the `atto-lang` repository organization. This README defines scope, not feature readiness.
+
+**Acceptance:** name exact source SHA/tree, runtime/toolchain, positive and negative checks and execution receipt before claiming support. Host-only tests and empty CI steps do not prove guest execution.
+
+## Migration and maintainer procedure
+
+The canonical home is now `atto-lang/atto-platform.asic`. The archived Oreslang repository is historical, not a pending transfer destination. AttoLang is the language/compiler/runtime/target ecosystem; [atto-co](https://github.com/atto-co) owns separate production cloud infrastructure, tenant management, billing, identity and deployment.
+
+For new language source, use the current `.atto` syntax from [atto-spec](https://github.com/atto-lang/atto-spec). Preserve pinned legacy `.ores` fixtures and their exact compiler/RTL provenance until replacement fixtures are compiler-generated and independently verified. Do not rename historical inputs or relabel evidence as newly generated.
+
+For future ownership changes, verify authorization, repository identity, commit/tree, history, permissions, branch rules, CI runners, secrets/environments, packages, webhooks/Apps, Pages, submodules and downstream consumers. Distinguish a repository import from an ownership transfer; neither a source mirror nor a repository rename proves continuity of numeric identity or security settings. See the [historical migration issue](https://github.com/ores-truffle-oreslang/.github/issues/26) for context.
+
+Generic RTL synthesis and host simulation do not establish ASIC signoff. A real physical flow requires reviewed PDK and Liberty inputs, constraints, mapped cells, timing closure, DRC/LVS and physical artifacts; the physical gate remains fail-closed until the required evidence exists. CI with zero executed steps is not execution evidence.

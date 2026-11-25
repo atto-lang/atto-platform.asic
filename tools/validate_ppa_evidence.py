@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """ASIC PPA reporting preflight. Does not validate physical evidence itself."""
 import json
+import hashlib
 import os
 import stat
 import math
@@ -118,6 +119,10 @@ def read_report(path):
         metadata = os.fstat(fd)
         if not stat.S_ISREG(metadata.st_mode):
             raise Rejected("report must be a regular file")
+        # Multiple hardlinks let a second path mutate supposedly pinned
+        # evidence without touching the supplied pathname.
+        if metadata.st_nlink != 1:
+            raise Rejected("report must be single-linked")
         if not 0 <= metadata.st_size <= MAX_REPORT_BYTES:
             raise Rejected("report exceeds 64 KiB")
         chunks = []
@@ -137,6 +142,8 @@ def read_report(path):
         if (after.st_dev != metadata.st_dev or
                 after.st_ino != metadata.st_ino or
                 after.st_size != metadata.st_size or
+                after.st_nlink != metadata.st_nlink or
+                after.st_mode != metadata.st_mode or
                 after.st_mtime_ns != metadata.st_mtime_ns or
                 after.st_ctime_ns != metadata.st_ctime_ns or
                 sum(map(len, chunks)) != metadata.st_size):
@@ -148,13 +155,39 @@ def read_report(path):
                       parse_constant=_reject_non_json_constant)
 
 
+def canonical_shape_sha256(record):
+    """Deterministic ID for a *validated report shape*, NOT authenticated proof.
+
+    Dict member ordering and JSON whitespace cannot change this identity.
+    Numeric representation and individual field values are intentionally
+    significant. It does not attest to RTL, P&R, silicon or board execution.
+    """
+    # Bind the identity to exactly the bytes that were shape-validated.
+    # Validating a mutable input first could let a mapping side effect or a
+    # concurrent caller mutate fields before serialization.
+    try:
+        canonical = json.dumps(record, sort_keys=True, separators=(",", ":"),
+                               ensure_ascii=True, allow_nan=False).encode("ascii")
+    except (TypeError, ValueError, OverflowError, RecursionError) as exc:
+        raise Rejected("non-JSON evidence shape") from exc
+    frozen = json.loads(canonical, object_pairs_hook=_unique_json_members,
+                        parse_constant=_reject_non_json_constant)
+    validate(frozen)
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def main(argv):
-    if len(argv) != 2:
-        print("usage: validate_ppa_evidence.py report.json", file=sys.stderr)
+    with_shape_id = len(argv) == 3 and argv[1] == "--with-shape-id"
+    if len(argv) != 2 and not with_shape_id:
+        print("usage: validate_ppa_evidence.py [--with-shape-id] report.json", file=sys.stderr)
         return 64
     try:
-        path = Path(argv[1])
-        print(json.dumps(validate(read_report(path)), sort_keys=True))
+        path = Path(argv[2] if with_shape_id else argv[1])
+        record = read_report(path)
+        result = validate(record)
+        if with_shape_id:
+            result["shape_sha256"] = canonical_shape_sha256(record)
+        print(json.dumps(result, sort_keys=True))
         return 0
     except (OSError, ValueError, UnicodeError, RecursionError) as exc:
         print(f"REJECTED: {exc}", file=sys.stderr)
