@@ -40,3 +40,13 @@ This README describes the intended repository scope and does not imply implement
 AttoLang is the canonical project name; new source, examples and documentation use `.atto` and the `atto-lang` repository organization. This README defines scope, not feature readiness.
 
 **Acceptance:** name exact source SHA/tree, runtime/toolchain, positive and negative checks and execution receipt before claiming support. Host-only tests and empty CI steps do not prove guest execution.
+
+## Migration and maintainer procedure
+
+The canonical home is now `atto-lang/atto-platform.asic`. The archived Oreslang repository is historical, not a pending transfer destination. AttoLang is the language/compiler/runtime/target ecosystem; [atto-co](https://github.com/atto-co) owns separate production cloud infrastructure, tenant management, billing, identity and deployment.
+
+For new language source, use the current `.atto` syntax from [atto-spec](https://github.com/atto-lang/atto-spec). Preserve pinned legacy `.ores` fixtures and their exact compiler/RTL provenance until replacement fixtures are compiler-generated and independently verified. Do not rename historical inputs or relabel evidence as newly generated.
+
+For future ownership changes, verify authorization, repository identity, commit/tree, history, permissions, branch rules, CI runners, secrets/environments, packages, webhooks/Apps, Pages, submodules and downstream consumers. Distinguish a repository import from an ownership transfer; neither a source mirror nor a repository rename proves continuity of numeric identity or security settings. See the [historical migration issue](https://github.com/ores-truffle-oreslang/.github/issues/26) for context.
+
+Generic RTL synthesis and host simulation do not establish ASIC signoff. A real physical flow requires reviewed PDK and Liberty inputs, constraints, mapped cells, timing closure, DRC/LVS and physical artifacts; the physical gate remains fail-closed until the required evidence exists. CI with zero executed steps is not execution evidence.
